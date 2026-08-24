@@ -12,7 +12,11 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join, dirname } from 'node:path';
 
-import { ADAPTERS, fetchSource } from './lib/adapters.js';
+import { fetchSource } from './lib/adapters.js';
+
+// Only systems verified to answer for third-party callers. Personio has an
+// adapter but blocks non-browser clients with 429, so it is not advertised.
+const SUPPORTED = ['greenhouse', 'lever', 'ashby', 'workable', 'teamtailor', 'smartrecruiters'];
 import { resolveDomain } from './lib/resolve.js';
 import { diffJobs, hashOf, fnOf } from './lib/diff.js';
 
@@ -87,7 +91,7 @@ const TOOLS = [
   }
 ];
 
-const server = new Server({ name: 'ats-jobs-mcp', version: '0.1.0' }, { capabilities: { tools: {} } });
+const server = new Server({ name: 'ats-jobs-mcp', version: '0.1.1' }, { capabilities: { tools: {} } });
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: TOOLS }));
 
@@ -100,7 +104,7 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
   const unresolved = (host) => text({
     domain: host, found: false,
     reason: 'This company is not on a supported ATS, or its careers page renders jobs with JavaScript.',
-    supported: Object.keys(ADAPTERS)
+    supported: SUPPORTED
   });
 
   if (name === 'find_job_board') {
