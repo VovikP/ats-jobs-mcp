@@ -1,0 +1,39 @@
+{
+  "title": "ATS Jobs API input",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "domains": {
+      "title": "Company websites",
+      "type": "array",
+      "description": "The simple way: just list company websites, e.g. \"stripe.com\". The Actor works out which applicant tracking system each company uses (Greenhouse, Lever, Ashby, Workable, Teamtailor, SmartRecruiters) and remembers it. Use this if you do not already know the board tokens.",
+      "editor": "stringList",
+      "prefill": ["stripe.com", "spotify.com"]
+    },
+    "sources": {
+      "title": "Explicit sources (advanced)",
+      "type": "array",
+      "description": "Skip auto-detection by naming the ATS and board token directly: [{\"ats\":\"greenhouse\",\"company\":\"stripe\"}]. Valid ats values: greenhouse, lever, ashby, workable, teamtailor, smartrecruiters. The company value is the token in the ATS URL, e.g. boards.greenhouse.io/<token>.",
+      "editor": "json"
+    },
+    "deriveSignals": {
+      "title": "Derive hiring signals",
+      "type": "boolean",
+      "description": "Also emit interpreted signals on top of raw changes: hiring_accelerating (postings 2x above the recent average), first_role_in_function (first hire in sales, AI/ML, security...), hiring_freeze.",
+      "default": true
+    },
+    "includeEvidence": {
+      "title": "Full evidence bundle",
+      "type": "boolean",
+      "description": "Attach full provenance to every record: source URL, HTTP status, fetch duration, job count, truncation flag. Use when the caller has to verify a record before acting on it.",
+      "default": false
+    },
+    "maxSources": {
+      "title": "Max sources per run",
+      "type": "integer",
+      "description": "Hard cap on how many companies one run may process. Protects against runaway cost.",
+      "default": 200,
+      "maximum": 2000
+    }
+  }
+}

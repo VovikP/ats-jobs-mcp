@@ -1,0 +1,22 @@
+{
+  "actorSpecification": 1,
+  "fields": {
+    "type": "object",
+    "properties": {
+      "schema_version": { "type": "string" },
+      "observed_at": { "type": "string" },
+      "company": { "type": "string" },
+      "ats": { "type": "string" },
+      "type": { "type": "string" },
+      "type_family": { "type": "string" },
+      "confidence": { "type": "number" }
+    }
+  },
+  "views": {
+    "overview": {
+      "title": "Signals & changes",
+      "transformation": { "fields": ["observed_at", "company", "ats", "type", "type_family", "job", "changed_fields", "prev", "magnitude_pct", "confidence"] },
+      "display": { "component": "table" }
+    }
+  }
+}

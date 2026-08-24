@@ -1,0 +1,11 @@
+{
+  "name": "ats-hiring-signals",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Hiring signals and job changes straight from source ATS APIs. Conditional requests, no headless, no personal data.",
+  "main": "src/main.js",
+  "scripts": { "start": "node src/main.js", "test:adapters": "node test-adapters.js" },
+  "dependencies": { "apify": "^3.2.6" },
+  "engines": { "node": ">=20" },
+  "license": "MIT"
+}

@@ -1,0 +1,12 @@
+{
+  "name": "ats-jobs-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for job data and hiring change detection across Greenhouse, Lever, Ashby, Workable, Teamtailor and SmartRecruiters. Give it a company domain, it finds the board itself.",
+  "type": "module",
+  "bin": { "ats-jobs-mcp": "./server.js" },
+  "files": ["server.js", "lib/"],
+  "keywords": ["mcp", "model-context-protocol", "jobs", "ats", "greenhouse", "lever", "ashby", "workable", "teamtailor", "smartrecruiters", "hiring", "recruiting"],
+  "engines": { "node": ">=20" },
+  "license": "MIT",
+  "dependencies": { "@modelcontextprotocol/sdk": "^1.0.0" }
+}

@@ -1,0 +1,12 @@
+{
+  "actorOutputSchemaVersion": 1,
+  "title": "Jobs, changes and hiring signals",
+  "properties": {
+    "results": {
+      "type": "string",
+      "title": "All records",
+      "description": "Baseline jobs, detected changes, derived hiring signals, unresolved sources and the run summary.",
+      "template": "{{links.apiDefaultDatasetUrl}}/items"
+    }
+  }
+}

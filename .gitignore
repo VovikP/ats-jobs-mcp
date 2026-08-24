@@ -1,0 +1,16 @@
+node_modules
+storage
+apify_storage
+.env
+_teststate.json
+*.log
+
+# Наш актив: карта компаній і накопичені результати розвідки.
+# Інструмент, який їх будує (tools/discover.js), відкритий — вихід ні.
+tools/sources-eu.json
+tools/discovery-results.txt
+tools/discovery-round2.txt
+tools/seed-domains.txt
+
+# Внутрішні документи
+docs/
