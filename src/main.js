@@ -89,6 +89,9 @@ for (const s of sources) {
   let events = [];
   if (baseline) {
     events = jobs.map(j => ({ type: 'job_indexed', type_family: 'supply', job: j }));
+    // Functions that already exist at baseline are not new hires. Without this,
+    // the first real diff reports every function as a first-ever role.
+    for (const j of jobs) { const f = fnOf(j); if (f !== 'other') state.functions[f] = observed_at; }
   } else {
     events = diffJobs(state.jobs, jobs, { truncated });
   }

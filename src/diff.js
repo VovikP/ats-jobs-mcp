@@ -1,16 +1,19 @@
 // Deterministic diff. The rule that saves us from mass false positives:
 // never emit job_closed when the source response might be truncated.
+// Order matters: the first pattern that matches wins. Specific disciplines are
+// checked before the generic "engineer", otherwise a first security or ML hire
+// is filed as plain engineering and the signal is lost.
 const FUNCTIONS = {
-  sales: /sales|account executive|business development|revenue|sdr|bdr/i,
-  marketing: /marketing|growth|demand gen|content|seo|brand/i,
-  engineering: /engineer|developer|architect|sre|devops|backend|frontend/i,
-  ai_ml: /machine learning|\bml\b|\bai\b|data scien|llm|nlp|applied scien/i,
-  security: /security|infosec|appsec|compliance|grc/i,
-  data: /data engineer|analytics|data analyst|bi\b/i,
-  product: /product manager|product owner|\bpm\b|design|ux/i,
-  support: /support|customer success|\bcs\b|onboarding/i,
-  finance: /finance|account(ing|ant)|controller|fp&a/i,
-  people: /recruit|people|talent|\bhr\b/i
+  ai_ml: /machine learning|ml|ai|data scien|llm|nlp|applied scien|deep learning/i,
+  security: /security|infosec|appsec|compliance|grc|trust & safety/i,
+  data: /data engineer|data platform|analytics|data analyst|bi|warehouse/i,
+  sales: /sales|account executive|business development|revenue|sdr|bdr|solutions engineer/i,
+  marketing: /marketing|growth|demand gen|content|seo|brand|communications/i,
+  product: /product manager|product owner|pm|designer|design|ux|ui/i,
+  support: /support|customer success|onboarding|solutions architect/i,
+  finance: /finance|account(ing|ant)|controller|fp&a|treasury/i,
+  people: /recruit|people|talent|hr|workplace/i,
+  engineering: /engineer|developer|architect|sre|devops|backend|frontend|full.?stack|mobile|qa/i
 };
 
 export const fnOf = j => {
@@ -60,12 +63,17 @@ export function deriveSignals(history, events, state) {
       magnitude_pct: Math.round((cur / prevAvg - 1) * 100),
       detail: { current_month: cur, prior_avg: +prevAvg.toFixed(1) } });
 
-  const seen = state.functions || {};
+  // Mark functions as seen while iterating, otherwise ten sales roles posted in
+  // one run each look like "the first sales hire" and the caller is charged ten
+  // times for one fact.
+  const seen = { ...(state.functions || {}) };
   for (const e of posted) {
     const f = fnOf(e.job);
-    if (f !== 'other' && !seen[f])
+    if (f !== 'other' && !seen[f]) {
+      seen[f] = true;
       out.push({ type: 'first_role_in_function', type_family: 'signal', function: f,
         detail: { title: e.job.title, url: e.job.url } });
+    }
   }
 
   if (cur === 0 && prevAvg >= 3)
