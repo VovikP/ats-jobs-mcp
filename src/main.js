@@ -9,8 +9,12 @@ const TRUNCATION_LIMIT = { smartrecruiters: 100 };
 await Actor.init();
 
 const input = await Actor.getInput() || {};
-const sources = (input.sources || []).slice(0, input.maxSources || 200);
-const domains = (input.domains || []).slice(0, input.maxSources || 200);
+// maxSources is a promise about cost. Applying it to each list separately would
+// let 200 sources plus 200 domains process 400 companies — twice the cap the
+// caller was shown. Budget the combined set instead.
+const maxSources = input.maxSources || 200;
+const sources = (input.sources || []).slice(0, maxSources);
+const domains = (input.domains || []).slice(0, Math.max(0, maxSources - sources.length));
 const wantSignals = input.deriveSignals !== false;
 const wantEvidence = input.includeEvidence === true;
 const tally = { sources: 0, unchanged: 0, indexed: 0, changes: 0, signals: 0, unresolved: 0, errors: 0 };
@@ -32,7 +36,15 @@ try {
 if (domains.length) {
   const map = (await store.getValue('domain-map')) || {};
   for (const d of domains) {
-    const host = String(d).replace(/^https?:[/][/]/, '').replace(/[/].*$/, '').replace(/^www[.]/, '');
+    const host = String(d).replace(/^https?:[/][/]/, '').replace(/[/].*$/, '').replace(/^www[.]/, '').trim();
+    // Resolution costs up to eighteen requests. Reject obvious junk before paying for it.
+    if (!/^[a-z0-9-]+([.][a-z0-9-]+)+$/i.test(host)) {
+      tally.unresolved++;
+      await Actor.pushData({ schema_version: SCHEMA_VERSION, type: 'source_unresolved', type_family: 'meta',
+        domain: String(d), observed_at: new Date().toISOString(),
+        hint: 'Not a domain name. Pass a company website such as "stripe.com".' });
+      continue;
+    }
     if (!map[host]) {
       const r = await resolveDomain(host);
       map[host] = r || { ats: null };

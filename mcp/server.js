@@ -97,8 +97,22 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: TOOLS }))
 
 const text = (o) => ({ content: [{ type: 'text', text: JSON.stringify(o, null, 2) }] });
 
+// An agent that forgot the argument must be told exactly that. Answering
+// "this company is not supported" would send the model looking for another
+// company instead of fixing its own call — and burn a dozen requests doing it.
+const badDomain = (d) => {
+  if (d === undefined || d === null || String(d).trim() === '')
+    return 'Missing required argument "domain". Pass a company website, e.g. "stripe.com".';
+  const host = String(d).replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/^www\./, '').trim();
+  if (!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(host))
+    return `"${d}" is not a domain name. Pass a company website, e.g. "stripe.com".`;
+  return null;
+};
+
 server.setRequestHandler(CallToolRequestSchema, async (req) => {
   const { name, arguments: args = {} } = req.params;
+  const invalid = badDomain(args.domain);
+  if (invalid) return text({ error: invalid, tool: name });
   const state = await loadState();
 
   const unresolved = (host) => text({
