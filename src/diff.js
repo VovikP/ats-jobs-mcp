@@ -58,7 +58,13 @@ export function deriveSignals(history, events, state) {
   const prevAvg = hist.length ? hist.slice(-3).reduce((a, h) => a + h.posted, 0) / Math.min(hist.length, 3) : 0;
   const cur = (history.find(h => h.month === month)?.posted || 0);
 
-  if (cur >= 3 && prevAvg > 0 && cur >= prevAvg * 2)
+  // Standing facts, not events: "this company is accelerating" stays true for the
+  // rest of the month. Emitting it on every run would charge the caller again and
+  // again for one observation. Fire once per month per company.
+  const already = (state.signalsEmitted && state.signalsEmitted[month]) || [];
+  const fireOnce = (type) => !already.includes(type);
+
+  if (cur >= 3 && prevAvg > 0 && cur >= prevAvg * 2 && fireOnce('hiring_accelerating'))
     out.push({ type: 'hiring_accelerating', type_family: 'signal',
       magnitude_pct: Math.round((cur / prevAvg - 1) * 100),
       detail: { current_month: cur, prior_avg: +prevAvg.toFixed(1) } });
@@ -76,7 +82,7 @@ export function deriveSignals(history, events, state) {
     }
   }
 
-  if (cur === 0 && prevAvg >= 3)
+  if (cur === 0 && prevAvg >= 3 && fireOnce('hiring_freeze'))
     out.push({ type: 'hiring_freeze', type_family: 'signal',
       detail: { current_month: 0, prior_avg: +prevAvg.toFixed(1) } });
 

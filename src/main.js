@@ -19,11 +19,13 @@ const tally = { sources: 0, unchanged: 0, indexed: 0, changes: 0, signals: 0, un
 // Actor is outside a limited-permission token's scope and returns 403.
 const stateStoreName = `ats-state-${(Actor.getEnv().actorId || 'local').toLowerCase()}`;
 let store;
+let statePersistent = true;
 try {
   store = await Actor.openKeyValueStore(stateStoreName);
 } catch (e) {
-  log.warning(`Named state store unavailable (${e.message}). Falling back to the run's default store — every run will be a baseline.`);
+  log.warning(`Named state store unavailable (${e.message}). Falling back to the run's default store.`);
   store = await Actor.openKeyValueStore();
+  statePersistent = false;
 }
 // Agents know domains, not board tokens. Resolve one into the other and cache
 // the answer: a company does not change its ATS twice a week.
@@ -106,6 +108,12 @@ for (const s of sources) {
 
   const signals = (!baseline && wantSignals) ? deriveSignals(state.history, events, state) : [];
   for (const e of events) if (e.type === 'job_posted') { const f = fnOf(e.job); if (f !== 'other') state.functions[f] = observed_at; }
+  if (signals.length) {
+    state.signalsEmitted = state.signalsEmitted || {};
+    const mk = observed_at.slice(0, 7);
+    state.signalsEmitted[mk] = [...new Set([...(state.signalsEmitted[mk] || []),
+      ...signals.filter(x => x.type !== 'first_role_in_function').map(x => x.type)])];
+  }
 
   const emit = async (e, chargeEvent) => {
     await Actor.pushData({
@@ -120,7 +128,10 @@ for (const s of sources) {
   if (baseline) {
     for (const e of events) await emit(e);
     tally.indexed += events.length;
-    await charge('job-indexed', events.length);
+    // Without durable state every run is a fresh baseline. Charging for it would
+    // bill the caller for the same catalogue over and over, so we take the loss.
+    if (statePersistent) await charge('job-indexed', events.length);
+    else log.warning('State is not persistent — baseline delivered free of charge.');
     log.info(`${s.ats}/${s.company}: baseline ${events.length} jobs`);
   } else {
     for (const e of events) await emit(e);

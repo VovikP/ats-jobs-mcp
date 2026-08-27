@@ -2,18 +2,27 @@
 // Every source must expose a stable id and support conditional requests.
 const UA = 'ats-signals/0.1 (+https://apify.com/store; contact via Apify)';
 
+// Never throws. One unreachable company must not abort a run that is watching
+// two hundred others — a thrown timeout would fail the whole run, discard the
+// work already done and dent the Actor's reliability score.
 async function getJson(url, etag) {
   const headers = { 'User-Agent': UA, Accept: 'application/json' };
   if (etag) headers['If-None-Match'] = etag;
   const t0 = Date.now();
-  const r = await fetch(url, { headers, signal: AbortSignal.timeout(20000) });
-  const ms = Date.now() - t0;
-  if (r.status === 304) return { notModified: true, ms, etag, status: 304 };
-  if (!r.ok) return { error: `HTTP ${r.status}`, status: r.status, ms };
-  const body = await r.text();
-  let json = null;
-  try { json = JSON.parse(body); } catch { return { error: 'invalid JSON', status: r.status, ms }; }
-  return { json, etag: r.headers.get('etag'), status: r.status, ms, bytes: body.length };
+  try {
+    const r = await fetch(url, { headers, signal: AbortSignal.timeout(20000) });
+    const ms = Date.now() - t0;
+    if (r.status === 304) return { notModified: true, ms, etag, status: 304 };
+    if (!r.ok) return { error: `HTTP ${r.status}`, status: r.status, ms };
+    const body = await r.text();
+    let json = null;
+    try { json = JSON.parse(body); } catch { return { error: 'invalid JSON', status: r.status, ms }; }
+    return { json, etag: r.headers.get('etag'), status: r.status, ms, bytes: body.length };
+  } catch (e) {
+    const ms = Date.now() - t0;
+    const timedOut = /abort|timeout/i.test(String(e && e.name) + String(e && e.message));
+    return { error: timedOut ? `timeout after ${ms}ms` : `network error: ${String(e && e.message).slice(0, 80)}`, status: 0, ms };
+  }
 }
 
 // Recruiter names, emails and phones never enter our data. GDPR is not a feature request.
@@ -99,11 +108,30 @@ export const ADAPTERS = {
   }
 };
 
+// Lever answers at most 100 postings per request. Without paging, a board with
+// more than that looks like it lost every job past the first hundred — which the
+// diff would report as a mass closure. Page until a short page comes back.
+const PAGE_SIZE = { lever: 100 };
+const MAX_PAGES = 20;
+
 export async function fetchSource({ ats, company }, etag) {
   const a = ADAPTERS[ats];
   if (!a) return { error: `unknown ats: ${ats}` };
   const url = a.url(company);
   const res = await getJson(url, etag);
   if (res.notModified || res.error) return { ...res, url };
-  return { ...res, url, jobs: a.parse(res.json) };
+
+  let jobs = a.parse(res.json);
+  const size = PAGE_SIZE[ats];
+  if (size && jobs.length >= size) {
+    for (let page = 1; page < MAX_PAGES; page++) {
+      const next = await getJson(`${url}${url.includes('?') ? '&' : '?'}skip=${page * size}`);
+      if (next.error || !next.json) break;
+      const more = a.parse(next.json);
+      if (!more.length) break;
+      jobs = jobs.concat(more);
+      if (more.length < size) break;
+    }
+  }
+  return { ...res, url, jobs };
 }
