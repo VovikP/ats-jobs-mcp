@@ -8,7 +8,8 @@ import { renderDom, BROWSER } from './render.js';
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36';
 
 const PATTERNS = [
-  [/boards\.greenhouse\.io\/(?:embed\/job_board\?for=)?([a-z0-9_-]+)/i, 'greenhouse'],
+  [/greenhouse\.io\/[^"'\s]*[?&]for=([a-z0-9_-]+)/i, 'greenhouse'],
+  [/boards\.greenhouse\.io\/([a-z0-9_-]+)/i, 'greenhouse'],
   [/job-boards\.greenhouse\.io\/([a-z0-9_-]+)/i, 'greenhouse'],
   [/jobs\.lever\.co\/([a-z0-9_-]+)/i, 'lever'],
   [/jobs\.ashbyhq\.com\/([a-z0-9_-]+)/i, 'ashby'],
@@ -55,7 +56,7 @@ export async function discover(domain) {
         }
         continue;
       }
-      if (!/^(www|assets|static|cdn|j)$/i.test(m[1]))
+      if (!/^(www|assets|static|cdn|j|embed|app|jobs|careers|boards|job_board|js|search|api)$/i.test(m[1]))
         return { domain: host, ats, company: m[1], method: 'careers-link', evidence: url };
     }
   }
@@ -74,7 +75,7 @@ export async function discover(domain) {
       if (dom.length < 2000) continue;
       for (const [re, ats] of PATTERNS) {
         const m = dom.match(re);
-        if (m && m[1] && !/^(www|assets|static|cdn|j)$/i.test(m[1]))
+        if (m && m[1] && !/^(www|assets|static|cdn|j|embed|app|jobs|careers|boards|job_board|js|search|api)$/i.test(m[1]))
           return { domain: host, ats, company: m[1], method: 'rendered', evidence: url };
       }
     }

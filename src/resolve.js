@@ -6,7 +6,8 @@ import { ADAPTERS, fetchSource } from './adapters/index.js';
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0.0.0 Safari/537.36';
 
 const PATTERNS = [
-  [/boards\.greenhouse\.io\/(?:embed\/job_board\?for=)?([a-z0-9_-]+)/i, 'greenhouse'],
+  [/greenhouse\.io\/[^"'\s]*[?&]for=([a-z0-9_-]+)/i, 'greenhouse'],
+  [/boards\.greenhouse\.io\/([a-z0-9_-]+)/i, 'greenhouse'],
   [/job-boards\.greenhouse\.io\/([a-z0-9_-]+)/i, 'greenhouse'],
   [/jobs\.lever\.co\/([a-z0-9_-]+)/i, 'lever'],
   [/jobs\.ashbyhq\.com\/([a-z0-9_-]+)/i, 'ashby'],
@@ -44,7 +45,12 @@ export async function resolveDomain(domain) {
           }
           continue;
         }
-        if (!/^(www|assets|static|cdn|j)$/i.test(m[1])) return { ats, company: m[1], method: 'careers-link' };
+        if (/^(www|assets|static|cdn|j|embed|app|jobs|careers|boards|job_board|js|search|api)$/i.test(m[1])) continue;
+        // A token scraped off a page is a guess until the API answers to it.
+        // Storing an unverified one poisons the cache with a permanent 404.
+        const probe = await fetchSource({ ats, company: m[1] });
+        if (probe.error || !Array.isArray(probe.jobs)) continue;
+        return { ats, company: m[1], method: 'careers-link' };
       }
     }
   }
