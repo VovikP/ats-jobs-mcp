@@ -10,9 +10,10 @@
   },
   "packages": [
     {
-      "registryType": "npm",
-      "identifier": "ats-jobs-mcp",
+      "registryType": "mcpb",
+      "identifier": "https://github.com/VovikP/ats-jobs-mcp/releases/download/v0.1.1/ats-jobs-mcp-0.1.1.mcpb",
       "version": "0.1.1",
+      "fileSha256": "62441c231a6a0bee2f790aeac45a81e1d45c523c2226c6151d48dbbf40a9fae1",
       "transport": {
         "type": "stdio"
       }
