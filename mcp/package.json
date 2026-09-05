@@ -1,6 +1,7 @@
 {
   "name": "ats-jobs-mcp",
   "version": "0.1.1",
+  "mcpName": "io.github.VovikP/ats-jobs-greenhouse-lever-ashby-workable-teamtailor",
   "description": "MCP server for job data and hiring change detection across Greenhouse, Lever, Ashby, Workable, Teamtailor and SmartRecruiters. Give it a company domain, it finds the board itself.",
   "type": "module",
   "bin": {

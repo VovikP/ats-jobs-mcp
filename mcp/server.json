@@ -1,0 +1,21 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.VovikP/ats-jobs-greenhouse-lever-ashby-workable-teamtailor",
+  "title": "ATS Jobs — open roles and hiring changes",
+  "description": "Open jobs and hiring changes from Greenhouse, Lever, Ashby, Workable, Teamtailor, SmartRecruiters",
+  "version": "0.1.1",
+  "repository": {
+    "url": "https://github.com/VovikP/ats-jobs-mcp",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "ats-jobs-mcp",
+      "version": "0.1.1",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}
